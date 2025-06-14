@@ -1,19 +1,16 @@
 package ch.maecefischer.todo_app.api_backend.api
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 
+@Schema(name = "TodoManagement.Todo")
 data class Todo(
     val id: UUID = UUID.randomUUID(),
     val title: String,
@@ -22,7 +19,8 @@ data class Todo(
     val createdAt: Instant = Instant.now(),
 )
 
-data class TodoCreationData(
+@Schema(name = "TodoManagement.TodoCreationPayload")
+data class TodoCreationPayload(
     val title: String,
     val isDone: Boolean? = false,
 ) {
@@ -34,9 +32,11 @@ data class TodoCreationData(
     }
 }
 
-data class TodoUpdateData(
+@Schema(name = "TodoManagement.TodoUpdatePayload")
+data class TodoUpdatePayload(
     val title: String?,
     val isDone: Boolean?,
+    @Schema(nullable = true, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     val description: Optional<String?>,
 ) {
     fun toUpdatedTodo(todo: Todo): Todo {
@@ -49,7 +49,8 @@ data class TodoUpdateData(
 }
 
 @RestController
-@RequestMapping("/api/v1/todos")
+@RequestMapping("/v1/todo-management")
+@Tag(name = "Todo Management")
 class TodoController {
     val todos = mutableListOf(
         Todo(title = "Create an OAS3 to TS with Zod generator", isDone = true),
@@ -59,19 +60,38 @@ class TodoController {
         Todo(title = "Explain to neighbours that you're not the \"PC Support guy\"", isDone = false),
     )
 
-    @GetMapping
+    @GetMapping("/todos")
+    @Operation(
+        summary = "Receive all todos.",
+        description = "Returns a list of all todos.",
+        operationId = "todoManagement.getTodos"
+    )
+    @ApiResponse(responseCode = "200", description = "Todos received.")
     fun todos(): MutableList<Todo> = todos
 
-    @PostMapping("/")
-    fun createTodo(@RequestBody data: TodoCreationData): Todo {
+    @PostMapping("/todos")
+    @Operation(
+        summary = "Create todo.",
+        description = "Create a new todo.",
+        operationId = "todoManagement.createTodo"
+    )
+    @ApiResponse(responseCode = "200", description = "Todo was created.")
+    fun createTodo(@RequestBody data: TodoCreationPayload): Todo {
         val newTodo = data.toTodo()
         todos.add(newTodo)
         return newTodo
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/todos/{id}")
+    @Operation(
+        summary = "Update todo.",
+        description = "Update existing todo.",
+        operationId = "todoManagement.updateTodo"
+    )
+    @ApiResponse(responseCode = "200", description = "Todo was updated.")
+    @ApiResponse(responseCode = "404", description = "Todo not found.")
     fun updateTodo(
-        @RequestBody data: TodoUpdateData,
+        @RequestBody data: TodoUpdatePayload,
         @PathVariable id: UUID,
     ): Todo {
         val todoIndex = todos.indexOfFirst { it.id == id }
@@ -81,7 +101,14 @@ class TodoController {
         return updatedTodo
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/todos/{id}")
+    @Operation(
+        summary = "Delete todo.",
+        description = "Delete existing todo.",
+        operationId = "todoManagement.removeTodo"
+    )
+    @ApiResponse(responseCode = "200", description = "Todo was deleted.")
+    @ApiResponse(responseCode = "404", description = "Todo not found.")
     fun removeTodo(@PathVariable id: UUID) {
         todos.removeIf { it.id == id }
     }

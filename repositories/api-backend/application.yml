@@ -1,0 +1,9 @@
+springdoc:
+  api-docs:
+    path: /specification.json
+  swagger-ui:
+    layout: BaseLayout
+    enable: true
+    use-root-path: true
+    url: /specification.json
+    disable-swagger-default-url: true
