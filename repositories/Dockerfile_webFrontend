@@ -1,0 +1,7 @@
+FROM node:22.14.0
+
+EXPOSE 5173
+
+WORKDIR /app
+
+CMD ["npm", "run", "devFromDocker"]
