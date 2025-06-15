@@ -14,7 +14,7 @@ import java.util.*
 data class Todo(
     val id: UUID = UUID.randomUUID(),
     val title: String,
-    val description: String? = null,
+    val description: String = "",
     val isDone: Boolean = false,
     val createdAt: Instant = Instant.now(),
 )
@@ -36,14 +36,13 @@ data class TodoCreationPayload(
 data class TodoUpdatePayload(
     val title: String?,
     val isDone: Boolean?,
-    @Schema(nullable = true, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    val description: Optional<String?>,
+    val description: String?,
 ) {
     fun toUpdatedTodo(todo: Todo): Todo {
         return todo.copy(
             title = this.title ?: todo.title,
             isDone = this.isDone ?: todo.isDone,
-            description = if (description.isPresent) description.get() else todo.description,
+            description = this.description ?: todo.description,
         )
     }
 }
