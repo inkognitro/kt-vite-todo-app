@@ -1,0 +1,7 @@
+FROM eclipse-temurin:21-jdk
+
+EXPOSE 8080
+
+WORKDIR /app
+
+CMD ["sh", "-c", "test -f build/libs/api-backend-0.0.1-SNAPSHOT.jar || ./gradlew build -x test && java -jar build/libs/api-backend-0.0.1-SNAPSHOT.jar"]

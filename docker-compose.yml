@@ -3,39 +3,20 @@ networks:
     driver: bridge
 
 services:
-  db:
-    container_name: db
-    image: mariadb:11.4
-    restart: always
-    ports:
-      - "3306:3306"
-    environment:
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MARIADB_DATABASE=${DB_NAME}
-      - MARIADB_USER=${DB_USER}
-      - MARIADB_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - ./volumes/db_data:/var/lib/mysql
-    networks:
-      - app-network
-
   api-backend:
     container_name: api-backend
     build:
       context: ./repositories
       dockerfile: ./Dockerfile_apiBackend
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
       - CORE_RDB_HOST=db
       - CORE_RDB_DATABASE=${DB_NAME}
       - CORE_RDB_USER=${DB_USER}
       - CORE_RDB_PASSWORD=${DB_PASSWORD}
-    depends_on:
-      - db
     volumes:
       - ./repositories/api-backend:/app
-      - ./volumes/api_backend_data:/app_data
     networks:
       - app-network
 
@@ -47,4 +28,4 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
