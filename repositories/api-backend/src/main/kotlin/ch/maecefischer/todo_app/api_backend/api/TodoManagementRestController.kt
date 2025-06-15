@@ -57,7 +57,7 @@ class TodoController {
         Todo(title = "Learn Spring Boot", isDone = false),
         Todo(title = "Do some Kotlin tutorials", isDone = false),
         Todo(title = "Go to Kickboxing morning session", isDone = false),
-        Todo(title = "Explain to neighbours that you're not the \"PC Support guy\"", isDone = false),
+        Todo(title = "Explain to neighbours that you're not the \"PC Support guy\"", isDone = true),
     )
 
     @GetMapping("/todos")
