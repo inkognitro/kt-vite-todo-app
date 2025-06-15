@@ -19,6 +19,7 @@ services:
       - CORE_RDB_DATABASE=${DB_NAME}
       - CORE_RDB_USER=${DB_USER}
       - CORE_RDB_PASSWORD=${DB_PASSWORD}
+      - CORE_API_CORS_ALLOWED_ORIGIN=localhost:5173
 
   web-frontend:
     container_name: web-frontend
