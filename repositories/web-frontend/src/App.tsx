@@ -12,6 +12,7 @@ import {
   startTransition,
   useCallback,
   useOptimistic,
+  useState,
 } from 'react'
 import { cn } from '@/lib/utils'
 import {
@@ -48,7 +49,7 @@ type WithOptionalFields<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 const todoFormSchema = z.object({
   title: z.string().min(1),
-  description: z.string().min(8),
+  description: z.string(),
   isDone: z.boolean(),
 })
 
@@ -56,20 +57,28 @@ type TodoFormFields = z.infer<typeof todoFormSchema>
 
 export function TodoForm({
   todo,
+  onDone,
 }: {
-  todoId?: string
   todo: WithOptionalFields<ApiV1Todo, 'id'>
+  onDone: () => void
 }) {
   const form = useForm<TodoFormFields>({
     resolver: zodResolver(todoFormSchema),
     defaultValues: todo,
   })
+  const updateTodo = useCallback(
+    (data: TodoFormFields) => {
+      console.log(`update former todo`, todo, `with following data`, data)
+      onDone()
+    },
+    [todo, onDone]
+  )
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data, event) => {
           event?.preventDefault()
-          console.log(data)
+          updateTodo(data)
         })}
         className="space-y-8"
       >
@@ -142,6 +151,7 @@ function TodoCard({
 }: ComponentProps<'div'> & {
   todo: ApiV1Todo
 }) {
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [optimisticTodo, setOptimisticIsDone] = useOptimistic(
     todo,
     (currentTodo, isDone: boolean) => {
@@ -183,14 +193,14 @@ function TodoCard({
         <CardTitle>{todo.title}</CardTitle>
         <CardDescription>Card Description</CardDescription>
       </div>
-      <Dialog>
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogTrigger>
           <Edit2Icon className="text-muted-foreground w-4 h-4" />
         </DialogTrigger>
         <DialogContent aria-describedby={undefined}>
           <DialogHeader className="space-y-8">
             <DialogTitle>Edit: {todo.title}</DialogTitle>
-            <TodoForm todoId={todo.id} todo={todo} />
+            <TodoForm todo={todo} onDone={() => setIsFormOpen(false)} />
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -199,12 +209,13 @@ function TodoCard({
 }
 
 function App() {
+  const [isFormOpen, setIsFormOpen] = useState(false)
   return (
     <DefaultPageLayout>
       <main className="page-content-container max-w-[725px] p-8 space-y-6">
         <TypographyH1>List of all todos</TypographyH1>
         <div className="flex flex-row justify-end">
-          <Dialog>
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
               <Button>
                 <PlusIcon className="w-4 h-4 " />
@@ -220,6 +231,7 @@ function App() {
                     description: '',
                     isDone: false,
                   }}
+                  onDone={() => setIsFormOpen(false)}
                 />
               </DialogHeader>
             </DialogContent>
