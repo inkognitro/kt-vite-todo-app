@@ -5,6 +5,7 @@ import {
   CircleIcon,
   Edit2Icon,
   PlusIcon,
+  TrashIcon,
 } from 'lucide-react'
 import { TypographyH1 } from '@/components/ui/typography'
 import {
@@ -24,11 +25,11 @@ import {
 } from '@/components/ui/dialog'
 import {
   Form,
+  FormButton,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormButton,
   FormMessage,
 } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
@@ -37,13 +38,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button.tsx'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-
-type ApiV1Todo = {
-  id: string
-  title: string
-  isDone: boolean
-  description: string
-}
+import type { Todo as ApiV1Todo } from '@/lib/api/todo-management/schemas.tsx'
+import {
+  useCreateTodoMutation,
+  useRemoveTodoMutation,
+  useTodoByIdQuery,
+  useTodosQuery,
+  useUpdateTodoMutation,
+} from '@/lib/react-query/todoManagement.ts'
 
 type WithOptionalFields<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
@@ -55,30 +57,27 @@ const todoFormSchema = z.object({
 
 type TodoFormFields = z.infer<typeof todoFormSchema>
 
-export function TodoForm({
+function TodoForm({
   todo,
-  onDone,
+  onSubmit,
 }: {
-  todo: WithOptionalFields<ApiV1Todo, 'id'>
-  onDone: () => void
+  todo?: WithOptionalFields<Omit<ApiV1Todo, 'createdAt'>, 'id'>
+  onSubmit: (data: TodoFormFields) => void
 }) {
   const form = useForm<TodoFormFields>({
     resolver: zodResolver(todoFormSchema),
-    defaultValues: todo,
-  })
-  const updateTodo = useCallback(
-    (data: TodoFormFields) => {
-      console.log(`update former todo`, todo, `with following data`, data)
-      onDone()
+    defaultValues: {
+      title: todo?.title ?? '',
+      description: todo?.description ?? '',
+      isDone: todo?.isDone ?? false,
     },
-    [todo, onDone]
-  )
+  })
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data, event) => {
           event?.preventDefault()
-          updateTodo(data)
+          onSubmit(data)
         })}
         className="space-y-8"
       >
@@ -128,12 +127,12 @@ export function TodoForm({
           />
         </div>
         <div className="flex flex-col">
-          {!todo.id && (
+          {!todo && (
             <FormButton type="submit" className="block w-full">
               Add todo
             </FormButton>
           )}
-          {!!todo.id && (
+          {!!todo && (
             <FormButton type="submit" className="block w-full">
               Save
             </FormButton>
@@ -144,6 +143,35 @@ export function TodoForm({
   )
 }
 
+function UpdateTodoForm({
+  todoId,
+  onDone,
+}: {
+  todoId: string
+  onDone: () => void
+}) {
+  const { data: todo, isLoading } = useTodoByIdQuery(todoId)
+  const updateTodoMutation = useUpdateTodoMutation(todoId)
+  if (isLoading) {
+    return <>Is loading Todo...</>
+  }
+  return (
+    <TodoForm
+      todo={todo!}
+      onSubmit={(data) => updateTodoMutation.mutateAsync(data).then(onDone)}
+    />
+  )
+}
+
+function CreateTodoForm({ onDone }: { onDone: () => void }) {
+  const createTodoMutation = useCreateTodoMutation()
+  return (
+    <TodoForm
+      onSubmit={(data) => createTodoMutation.mutateAsync(data).then(onDone)}
+    />
+  )
+}
+
 function TodoCard({
   todo,
   className,
@@ -151,6 +179,8 @@ function TodoCard({
 }: ComponentProps<'div'> & {
   todo: ApiV1Todo
 }) {
+  const removeTodoMutation = useRemoveTodoMutation(todo.id)
+  const updateTodoMutation = useUpdateTodoMutation(todo.id)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [optimisticTodo, setOptimisticIsDone] = useOptimistic(
     todo,
@@ -163,9 +193,9 @@ function TodoCard({
       startTransition(() => {
         setOptimisticIsDone(isDone)
       })
-      console.log(`update todo "isDone" with id "${todo.id}" to: `, isDone)
+      updateTodoMutation.mutate({ isDone })
     },
-    [setOptimisticIsDone, todo]
+    [updateTodoMutation, setOptimisticIsDone]
   )
   return (
     <div
@@ -185,30 +215,42 @@ function TodoCard({
         {optimisticTodo.isDone && (
           <CircleCheckBigIcon
             className="text-green-700"
-            onClick={() => updateTodoIsDone(true)}
+            onClick={() => updateTodoIsDone(false)}
           />
         )}
       </button>
       <div className="grow">
         <CardTitle>{todo.title}</CardTitle>
-        <CardDescription>Card Description</CardDescription>
+        <CardDescription>{todo.description}</CardDescription>
       </div>
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogTrigger>
-          <Edit2Icon className="text-muted-foreground w-4 h-4" />
-        </DialogTrigger>
-        <DialogContent aria-describedby={undefined}>
-          <DialogHeader className="space-y-8">
-            <DialogTitle>Edit: {todo.title}</DialogTitle>
-            <TodoForm todo={todo} onDone={() => setIsFormOpen(false)} />
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <div className="space-x-2">
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogTrigger>
+            <Edit2Icon className="text-muted-foreground w-4 h-4" />
+          </DialogTrigger>
+          <DialogContent aria-describedby={undefined}>
+            <DialogHeader className="space-y-8">
+              <DialogTitle>Edit: {todo.title}</DialogTitle>
+              <UpdateTodoForm
+                todoId={todo.id}
+                onDone={() => setIsFormOpen(false)}
+              />
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+        <button onClick={() => removeTodoMutation.mutate()}>
+          <TrashIcon
+            className="w-4 h-4"
+            onClick={() => removeTodoMutation.mutate()}
+          />
+        </button>
+      </div>
     </div>
   )
 }
 
 function App() {
+  const { data: todos, isLoading } = useTodosQuery()
   const [isFormOpen, setIsFormOpen] = useState(false)
   return (
     <DefaultPageLayout>
@@ -225,31 +267,19 @@ function App() {
             <DialogContent aria-describedby={undefined}>
               <DialogHeader className="space-y-8">
                 <DialogTitle>Add new todo</DialogTitle>
-                <TodoForm
-                  todo={{
-                    title: '',
-                    description: '',
-                    isDone: false,
-                  }}
-                  onDone={() => setIsFormOpen(false)}
-                />
+                <CreateTodoForm onDone={() => setIsFormOpen(false)} />
               </DialogHeader>
             </DialogContent>
           </Dialog>
         </div>
-        <div className="space-y-2">
-          {[...Array(10).keys()].map((index) => (
-            <TodoCard
-              key={index}
-              todo={{
-                id: `id-${index + 1}`,
-                title: `Todo No ${index + 1}`,
-                description: `This is the description of the Todo No ${index + 1}`,
-                isDone: index % 2 === 0,
-              }}
-            />
-          ))}
-        </div>
+        {isLoading && <>Loading Todos...</>}
+        {!!todos && (
+          <div className="space-y-2">
+            {todos.map((todo) => (
+              <TodoCard key={todo.id} todo={todo} />
+            ))}
+          </div>
+        )}
       </main>
     </DefaultPageLayout>
   )
