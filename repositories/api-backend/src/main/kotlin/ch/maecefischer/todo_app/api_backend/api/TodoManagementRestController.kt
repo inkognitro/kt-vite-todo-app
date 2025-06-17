@@ -48,7 +48,10 @@ data class TodoUpdatePayload(
 }
 
 @RestController
-@RequestMapping("/v1/todo-management")
+@RequestMapping(
+    "/v1/todo-management",
+    produces = ["application/json"]
+)
 @Tag(name = "Todo Management")
 class TodoController {
     val todos = mutableListOf(
@@ -68,13 +71,28 @@ class TodoController {
     @ApiResponse(responseCode = "200", description = "Todos received.")
     fun todos(): MutableList<Todo> = todos
 
+    @GetMapping("/todos/{id}")
+    @Operation(
+        summary = "Receive todo by id.",
+        description = "Returns a todo by a specific id.",
+        operationId = "todoManagement.getTodoById"
+    )
+    @ApiResponse(responseCode = "200", description = "Todo received.")
+    @ApiResponse(responseCode = "404", description = "Todo not found.")
+    fun getTodoById(@PathVariable id: UUID): Todo {
+        val todo = todos.find { it.id == id }
+        if (todo == null) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        return todo
+    }
+
     @PostMapping("/todos")
     @Operation(
         summary = "Create todo.",
         description = "Create a new todo.",
         operationId = "todoManagement.createTodo"
     )
-    @ApiResponse(responseCode = "200", description = "Todo was created.")
+    @ApiResponse(responseCode = "201", description = "Todo was created.")
+    @ResponseStatus(HttpStatus.CREATED)
     fun createTodo(@RequestBody data: TodoCreationPayload): Todo {
         val newTodo = data.toTodo()
         todos.add(newTodo)
@@ -94,9 +112,9 @@ class TodoController {
         @PathVariable id: UUID,
     ): Todo {
         val todoIndex = todos.indexOfFirst { it.id == id }
-        if (todoIndex == - 1) throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        if (todoIndex == -1) throw ResponseStatusException(HttpStatus.NOT_FOUND)
         val updatedTodo = data.toUpdatedTodo(todos[todoIndex])
-        todos.add(todoIndex, updatedTodo)
+        todos[todoIndex] = updatedTodo
         return updatedTodo
     }
 
