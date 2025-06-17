@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
-  CreateTodoPayload,
+  TodoCreationPayload,
   Todo,
-  UpdateTodoPayload,
+  TodoUpdatePayload,
 } from '@/lib/api/todo-management/schemas.tsx'
 
 const todos: Todo[] = [
@@ -80,7 +80,7 @@ export function useCreateTodoMutation() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationKey: ['todoManagement', 'createTodo'],
-    mutationFn: async (data: CreateTodoPayload) => {
+    mutationFn: async (data: TodoCreationPayload) => {
       return new Promise((resolve) => {
         resolve({ ...data, id: crypto.randomUUID() })
       })
@@ -95,7 +95,7 @@ export function useUpdateTodoMutation(todoId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationKey: ['todoManagement', 'updateTodo', todoId],
-    mutationFn: async (data: UpdateTodoPayload): Promise<Todo> => {
+    mutationFn: async (data: TodoUpdatePayload): Promise<Todo> => {
       return new Promise((resolve) => {
         const todo = todos.find((t) => t.id === todoId)
         // @ts-ignore

@@ -6,13 +6,13 @@ export type Todo = {
   createdAt: string
 }
 
-export type CreateTodoPayload = {
+export type TodoCreationPayload = {
   title?: string
   description?: string
   isDone?: boolean
 }
 
-export type UpdateTodoPayload = {
+export type TodoUpdatePayload = {
   title?: string
   description?: string
   isDone?: boolean
