@@ -4,53 +4,27 @@ import type {
   Todo,
   TodoUpdatePayload,
 } from '@/lib/api/todo-management/schemas.tsx'
-
-const todos: Todo[] = [
-  {
-    id: 'f2d39cac-1005-4434-8772-8536cb40177b',
-    title: 'Todo mock 1',
-    description: 'Foo',
-    isDone: true,
-    createdAt: '2025-06-17T15:19:33.331152400Z',
-  },
-  {
-    id: '4925e449-6c89-4357-9cc5-400c7754e972',
-    title: 'Todo mock 2',
-    description: 'Foo',
-    isDone: false,
-    createdAt: '2025-06-17T15:19:33.331152400Z',
-  },
-  {
-    id: 'fd11fb05-ed29-49d5-8ba5-7d71c6d0c908',
-    title: 'Todo mock 3',
-    description: 'Foo',
-    isDone: false,
-    createdAt: '2025-06-17T15:19:33.331152400Z',
-  },
-  {
-    id: '090ab412-9ec6-4ac7-937a-fd679aa89aaa',
-    title: 'Todo mock 4',
-    description: 'Foo',
-    isDone: false,
-    createdAt: '2025-06-17T15:19:33.331152400Z',
-  },
-  {
-    id: '10958149-1832-400d-a4ac-b8340b83dd16',
-    title: 'Todo mock 5',
-    description: 'Foo',
-    isDone: true,
-    createdAt: '2025-06-17T15:19:33.331152400Z',
-  },
-]
+import { getRevealedResponseOrReject } from '@/lib/api/core'
+import {
+  createTodo,
+  getTodoById,
+  getTodos,
+  updateTodo,
+} from '@/lib/api/todo-management'
+import { useRequestHandler } from '@/lib/api-utils/requestHandler.ts'
 
 const todosQueryKey = ['todoManagement', 'todos']
 export function useTodosQuery() {
+  const requestHandler = useRequestHandler()
   return useQuery({
     queryKey: todosQueryKey,
     queryFn: async (): Promise<Todo[]> => {
-      return new Promise((resolve) => {
-        resolve(todos)
-      })
+      const rr = await getRevealedResponseOrReject(
+        200,
+        'application/json',
+        getTodos(requestHandler)
+      )
+      return rr.body
     },
   })
 }
@@ -61,29 +35,37 @@ const createTodoByIdQueryKey = (todoId: string) => [
   todoId,
 ]
 export function useTodoByIdQuery(todoId: string) {
+  const requestHandler = useRequestHandler()
   return useQuery({
     queryKey: createTodoByIdQueryKey(todoId),
     queryFn: async (): Promise<Todo> => {
-      return new Promise((resolve, reject) => {
-        const todo = todos.find((t) => t.id === todoId)
-        if (!todo) {
-          reject(new Error(`todo with id ${todoId} not found`))
-          return
-        }
-        resolve(todo)
-      })
+      const rr = await getRevealedResponseOrReject(
+        200,
+        'application/json',
+        getTodoById(requestHandler, {
+          pathParams: { id: todoId },
+        })
+      )
+      return rr.body
     },
   })
 }
 
 export function useCreateTodoMutation() {
   const queryClient = useQueryClient()
+  const requestHandler = useRequestHandler()
   return useMutation({
     mutationKey: ['todoManagement', 'createTodo'],
     mutationFn: async (data: TodoCreationPayload) => {
-      return new Promise((resolve) => {
-        resolve({ ...data, id: crypto.randomUUID() })
-      })
+      const rr = await getRevealedResponseOrReject(
+        201,
+        'application/json',
+        createTodo(requestHandler, {
+          contentType: 'application/json',
+          body: data,
+        })
+      )
+      return rr.body
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: todosQueryKey })
@@ -93,14 +75,22 @@ export function useCreateTodoMutation() {
 
 export function useUpdateTodoMutation(todoId: string) {
   const queryClient = useQueryClient()
+  const requestHandler = useRequestHandler()
   return useMutation({
     mutationKey: ['todoManagement', 'updateTodo', todoId],
     mutationFn: async (data: TodoUpdatePayload): Promise<Todo> => {
-      return new Promise((resolve) => {
-        const todo = todos.find((t) => t.id === todoId)
-        // @ts-ignore
-        resolve({ ...todo, ...data })
-      })
+      const rr = await getRevealedResponseOrReject(
+        200,
+        'application/json',
+        updateTodo(requestHandler, {
+          contentType: 'application/json',
+          body: data,
+          pathParams: {
+            id: todoId,
+          },
+        })
+      )
+      return rr.body
     },
     onSuccess: (updatedTodo) => {
       const todoByIdQueryKey = createTodoByIdQueryKey(todoId)

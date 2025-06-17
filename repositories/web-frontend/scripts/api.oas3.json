@@ -1,0 +1,252 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TodoApp API documentation",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/v1/todo-management/todos": {
+      "get": {
+        "tags": [
+          "Todo Management"
+        ],
+        "summary": "Receive all todos.",
+        "description": "Returns a list of all todos.",
+        "operationId": "todoManagement.getTodos",
+        "responses": {
+          "200": {
+            "description": "Todos received.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TodoManagement.Todo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Todo Management"
+        ],
+        "summary": "Create todo.",
+        "description": "Create a new todo.",
+        "operationId": "todoManagement.createTodo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoManagement.TodoCreationPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Todo was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoManagement.Todo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/todo-management/todos/{id}": {
+      "get": {
+        "tags": [
+          "Todo Management"
+        ],
+        "summary": "Receive todo by id.",
+        "description": "Returns a todo by a specific id.",
+        "operationId": "todoManagement.getTodoById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Todo received.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoManagement.Todo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoManagement.Todo"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Todo Management"
+        ],
+        "summary": "Delete todo.",
+        "description": "Delete existing todo.",
+        "operationId": "todoManagement.removeTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Todo was deleted."
+          },
+          "404": {
+            "description": "Todo not found."
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Todo Management"
+        ],
+        "summary": "Update todo.",
+        "description": "Update existing todo.",
+        "operationId": "todoManagement.updateTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoManagement.TodoUpdatePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Todo was updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoManagement.Todo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoManagement.Todo"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TodoManagement.TodoCreationPayload": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "isDone": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "TodoManagement.Todo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "isDone": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "createdAt",
+          "description",
+          "id",
+          "isDone",
+          "title"
+        ]
+      },
+      "TodoManagement.TodoUpdatePayload": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "isDone": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
