@@ -122,27 +122,3 @@ export function useUpdateTodoMutation(todoId: string) {
     },
   })
 }
-
-export function useRemoveTodoMutation(todoId: string) {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationKey: ['todoManagement', 'removeTodo', todoId],
-    mutationFn: async (): Promise<undefined> => {
-      return new Promise((resolve) => {
-        resolve(undefined)
-      })
-    },
-    onSuccess: () => {
-      console.log('todos removed 1')
-
-      const todos = queryClient.getQueryData<Todo[]>(todosQueryKey)
-      if (todos && !!todos.find((t) => t.id === todoId)) {
-        console.log('todos removed 2')
-
-        queryClient.setQueryData(todosQueryKey, (oldTodos: Todo[]) => {
-          return oldTodos.filter((t: Todo) => t.id !== todoId)
-        })
-      }
-    },
-  })
-}

@@ -5,7 +5,6 @@ import {
   CircleIcon,
   Edit2Icon,
   PlusIcon,
-  TrashIcon,
 } from 'lucide-react'
 import { TypographyH1 } from '@/components/ui/typography'
 import {
@@ -41,7 +40,6 @@ import { z } from 'zod'
 import type { Todo as ApiV1Todo } from '@/lib/api/todo-management/schemas.tsx'
 import {
   useCreateTodoMutation,
-  useRemoveTodoMutation,
   useTodoByIdQuery,
   useTodosQuery,
   useUpdateTodoMutation,
@@ -179,7 +177,6 @@ function TodoCard({
 }: ComponentProps<'div'> & {
   todo: ApiV1Todo
 }) {
-  const removeTodoMutation = useRemoveTodoMutation(todo.id)
   const updateTodoMutation = useUpdateTodoMutation(todo.id)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [optimisticTodo, setOptimisticIsDone] = useOptimistic(
@@ -238,12 +235,6 @@ function TodoCard({
             </DialogHeader>
           </DialogContent>
         </Dialog>
-        <button onClick={() => removeTodoMutation.mutate()}>
-          <TrashIcon
-            className="w-4 h-4"
-            onClick={() => removeTodoMutation.mutate()}
-          />
-        </button>
       </div>
     </div>
   )
